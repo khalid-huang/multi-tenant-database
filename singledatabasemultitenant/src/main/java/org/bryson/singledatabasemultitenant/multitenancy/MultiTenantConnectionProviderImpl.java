@@ -1,74 +1,28 @@
 package org.bryson.singledatabasemultitenant.multitenancy;
 
-import org.bryson.singledatabasemultitenant.constant.GlobalContext;
-import org.hibernate.HibernateException;
-import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.hibernate.engine.jdbc.connections.spi.AbstractDataSourceBasedMultiTenantConnectionProviderImpl;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 
+/**
+ * 这个类是Hibernate框架拦截sql语句并在执行sql语句之前更换数据源提供的类
+ * @author lanyuanxiaoyao
+ * @version 1.0
+ */
 @Component
-public class MultiTenantConnectionProviderImpl implements MultiTenantConnectionProvider {
-    @Autowired
-    private DataSource dataSource;
+public class MultiTenantConnectionProviderImpl extends AbstractDataSourceBasedMultiTenantConnectionProviderImpl {
 
+    // 在没有提供tenantId的情况下返回默认数据源
     @Override
-    public Connection getAnyConnection() throws SQLException {
-        return dataSource.getConnection();
+    protected DataSource selectAnyDataSource() {
+        return TenantDataSourceProvider.getTenantDataSource("Default");
     }
 
+    // 提供了tenantId的话就根据ID来返回数据源
     @Override
-    public void releaseAnyConnection(Connection connection) throws SQLException {
-        connection.close();
-    }
-
-    @Override
-    public Connection getConnection(String tenantIdentifier) throws SQLException {
-        final Connection connection = getAnyConnection();
-        try {
-            if (tenantIdentifier != null) {
-                connection.createStatement().execute("USE " + GlobalContext.DATABASE_SCHEMA_PREFIX + tenantIdentifier);
-            } else {
-                connection.createStatement().execute("USE " + GlobalContext.DATABASE_SCHEMA_PREFIX +  GlobalContext.DEFAULT_TENANT_ID);
-            }
-        } catch ( SQLException e) {
-            throw new HibernateException(
-                    "Could not alter JDBC connection to specified schema [" + GlobalContext.DATABASE_SCHEMA_PREFIX + tenantIdentifier + "]" + " " + e.toString(),
-                    e
-            );
-        }
-        return connection;
-    }
-
-    @Override
-    public void releaseConnection(String tenantIdentifier, Connection connection) throws SQLException {
-        try {
-            connection.createStatement().execute( "USE " + GlobalContext.DEFAULT_TENANT_ID );
-        }
-        catch ( SQLException e ) {
-            throw new HibernateException(
-                    "Could not alter JDBC connection to specified schema [" + tenantIdentifier + "]",
-                    e
-            );
-        }
-        connection.close();
-    }
-
-    @Override
-    public boolean supportsAggressiveRelease() {
-        return true;
-    }
-
-    @Override
-    public boolean isUnwrappableAs(Class aClass) {
-        return false;
-    }
-
-    @Override
-    public <T> T unwrap(Class<T> aClass) {
-        return null;
+    protected DataSource selectDataSource(String tenantIdentifier) {
+        System.out.println("tenantIdentifier: " + tenantIdentifier);
+        return TenantDataSourceProvider.getTenantDataSource(tenantIdentifier);
     }
 }
