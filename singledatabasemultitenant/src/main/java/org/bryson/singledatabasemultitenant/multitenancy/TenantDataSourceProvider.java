@@ -39,7 +39,7 @@ public class TenantDataSourceProvider {
 
         TenantInfo t2 = new TenantInfo();
         t2.setTenantId("2");
-        t2.setUrl("jdbc:mysql://222.200.180.59:3306/multitenant_2?characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true");
+        t2.setUrl("jdbc:mysql://XXXX:3306/multitenant_2?characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true");
         t2.setPassword("workflow");
         t2.setUsername("root");
 
